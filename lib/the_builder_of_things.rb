@@ -1,9 +1,10 @@
 require "the_builder_of_things/version"
+require 'active_support/core_ext/string'
 require 'delegate'
 
 module TheBuilderOfThings
   class Thing
-    attr_reader :name
+    attr_accessor :name
 
     def initialize(name=nil)
       @name = name
@@ -22,6 +23,7 @@ module TheBuilderOfThings
     end
 
     alias :being_the :is_the
+    alias :and_the :is_the
 
     def has(things)
       if things == 1
@@ -40,6 +42,7 @@ module TheBuilderOfThings
     def can
       BehaviorBuilder.new(self)
     end
+
   end
 
   class BehaviorBuilder
@@ -56,8 +59,10 @@ module TheBuilderOfThings
         result
       end
 
-      @parent.define_singleton_method(args.first) do
-        calls
+      unless args.empty?
+        @parent.define_singleton_method(args.first) do
+          calls
+        end
       end
     end
   end
@@ -68,8 +73,23 @@ module TheBuilderOfThings
       @nested = nested
     end
 
+    def prepare(instance, accesor_name)
+      instance.name = accesor_name
+      instance.define_singleton_method "#{accesor_name}?" do
+        true
+      end
+    end
+
     def method_missing(mtd, *args, &blk)
       nested = @nested
+      accesor_name = mtd.to_s.singularize
+
+      if nested.respond_to? :map
+        nested.map{|n| prepare(n, accesor_name) }
+      else
+        prepare(nested, accesor_name)
+      end
+
       @parent.define_singleton_method mtd do
         nested
       end
@@ -83,6 +103,11 @@ module TheBuilderOfThings
       self.to_a.each do |thing|
         thing.instance_eval(&blk)
       end
+    end
+
+    def is_a?(clazz)
+      return true if clazz == Array
+      super
     end
   end
 

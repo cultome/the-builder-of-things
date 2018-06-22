@@ -41,7 +41,10 @@ RSpec.describe TheBuilderOfThings do
     jane.has(2).arms.each { having(1).hand.having(5).fingers }
 
     expect(jane.arms.first.hand.fingers.size).to eq 5 # => 5
+    expect(jane.arms.first.name).to eq "arm"
+    expect(jane.arms.first.arm?).to be true
   end
+
 
   it 'can define properties on nested items' do
     jane.has(1).head.having(2).eyes.each { being_the.color.blue.with(1).pupil.being_the.color.black }
@@ -49,6 +52,13 @@ RSpec.describe TheBuilderOfThings do
     expect(jane.head.eyes.first.color).to eq "blue"
     expect(jane.head.eyes.first.pupil.color).to eq "black"
   end
+
+  it 'should allow chaining via the and_the method' do
+    jane.has(2).eyes.each { being_the.color.blue.and_the.shape.round }
+    expect(jane.eyes.first.color).to eq 'blue'
+    expect(jane.eyes.first.shape).to eq 'round'
+  end
+
 
   describe 'define behavior' do
     before :each do
@@ -62,8 +72,9 @@ RSpec.describe TheBuilderOfThings do
     end
 
     it 'if past tense was provided then method calls are tracked' do
+      jane.speak("hello")
       jane.speak("bye")
-      expect(jane.spoke).to eq ["Jane says: bye"]
+      expect(jane.spoke).to eq ["Jane says: hello", "Jane says: bye"]
     end
   end
 end
